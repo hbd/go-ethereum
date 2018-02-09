@@ -179,6 +179,37 @@ func TestInsert(t *testing.T) {
 	}
 }
 
+func randSeq(n int) string {
+	var letters = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
+
+	b := make([]rune, n)
+	for i:= range b {
+		b[i] = letters[rand.Intn(len(letters))]
+	}
+	return string(b)
+}
+
+func TestInsertMany(t *testing.T) {
+	print("Starting TestInsertMany\n")
+	trie := newEmpty()
+	var keys [1000]string
+	var vals [1000]string
+
+	for i := 0; i < 1000; i++ {
+		keys[i] = randSeq(10)
+		vals[i] = randSeq(10)
+		updateString(trie, keys[i], vals[i])
+	}
+
+	trie.PrintTrie([]byte(keys[0]))
+	trie.PrintTrie([]byte(keys[1]))
+	trie.PrintTrie([]byte(keys[99]))
+	trie.PrintTrie([]byte(keys[200]))
+	trie.PrintTrie([]byte(keys[999]))
+
+	print("End of TestInsertMany\n")
+}
+
 func TestGet(t *testing.T) {
 	trie := newEmpty()
 	updateString(trie, "doe", "reindeer")

@@ -177,6 +177,74 @@ func (t *Trie) tryGet(origNode node, key []byte, pos int) (value []byte, newnode
 	}
 }
 
+func (t *Trie) PrintTrie(key []byte) []byte {
+	res, err := t.TryPrintTrie(key)
+	if err != nil {
+		log.Error(fmt.Sprintf("Unhandled trie error: %v", err))
+	}
+	return res
+}
+
+func (t *Trie)TryPrintTrie(key []byte) ([]byte, error) {
+	key = keybytesToHex(key)
+	value, newroot, didResolve, trieDepth, err := t.tryPrintTrie(t.root, key, 0)
+	if err == nil && didResolve {
+		t.root = newroot
+	}
+	print("Trie depth: ", trieDepth, "\n")
+	return value, err
+}
+var depth = 0
+
+func (t *Trie) tryPrintTrie(origNode node, key []byte, pos int) (value []byte, newnode node, didResolve bool,
+	trieDepth int, err error) {
+
+	switch n := (origNode).(type) {
+	case nil:
+		print("nil\n")
+		return nil, nil, false, depth, nil
+	case valueNode:
+		print("valueNode\n")
+		return n, n, false, depth, nil
+	case *shortNode:
+		print("shortNode\n")
+		if len(key)-pos < len(n.Key) || !bytes.Equal(n.Key, key[pos:pos+len(n.Key)]) {
+			// key not found in trie
+			print("Key Not in Trie")
+			return nil, n, false, depth, nil
+		}
+		depth += 1
+		value, newnode, didResolve, _, err = t.tryPrintTrie(n.Val, key, pos+len(n.Key))
+		if err == nil && didResolve {
+			n = n.copy()
+			n.Val = newnode
+			n.flags.gen = t.cachegen
+		}
+		return value, n, didResolve, depth, err
+	case *fullNode:
+		print("fullNode\n")
+		depth += 1
+		value, newnode, didResolve, _, err = t.tryPrintTrie(n.Children[key[pos]], key, pos+1)
+		if err == nil && didResolve {
+			n = n.copy()
+			n.flags.gen = t.cachegen
+			n.Children[key[pos]] = newnode
+		}
+		return value, n, didResolve, depth, err
+	case hashNode:
+		print("hashNode\n")
+		child, err := t.resolveHash(n, key[:pos])
+		if err != nil {
+			return nil, n, true, depth, err
+		}
+		depth += 1
+		value, newnode, _, _, err := t.tryPrintTrie(child, key, pos)
+		return value, newnode, true, depth, err
+	default:
+		panic(fmt.Sprintf("%T: invalid node: %v", origNode, origNode))
+	}
+}
+
 // Update associates key with value in the trie. Subsequent calls to
 // Get will return value. If value has length zero, any existing value
 // is deleted from the trie and calls to Get will return nil.
