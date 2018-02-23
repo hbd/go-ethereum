@@ -216,10 +216,10 @@ func Max(numOne, numTwo int) int {
 // Iterates through children of each fullNode, recursively testing their depth to find the deepest branch
 func (t *Trie) tryTrieDFS(origNode node, key []byte, pos int, childDepth int, maxDepth int) int {
 	switch n := (origNode).(type) {
-	case nil:
+	case nil: // Do not add depth, this was a nil reference
 		return Max(childDepth, maxDepth)
-	case valueNode:
-		print()
+	case valueNode: // Add depth, this is the final value node
+		fmt.Printf("Found Value: %x\n", n)
 		return Max(childDepth + 1, maxDepth)
 	case *shortNode:
 		if len(key)-pos < len(n.Key) || !bytes.Equal(n.Key, key[pos:pos+len(n.Key)]) {
@@ -243,6 +243,24 @@ func (t *Trie) tryTrieDFS(origNode node, key []byte, pos int, childDepth int, ma
 	default:
 		panic(fmt.Sprintf("%T: invalid node: %v", origNode, origNode))
 	}
+}
+
+func (t *Trie) TryGetBranchFactor(origNode node) int {
+	switch n := (origNode).(type) {
+	case nil:
+		return 0
+	case valueNode:
+		fmt.Printf("%s\n", n)
+		return 0
+	case *shortNode:
+		return 0
+	case *fullNode:
+		return 0
+	default:
+		return 0
+	}
+
+	return 0
 }
 
 func (t *Trie) tryPrintTrie(origNode node, key []byte, pos int) (value []byte, newnode node, didResolve bool,
@@ -277,10 +295,6 @@ func (t *Trie) tryPrintTrie(origNode node, key []byte, pos int) (value []byte, n
 		return value, n, didResolve, err
 	case *fullNode:
 		fmt.Printf("fullNode: %s\n", key)
-		// Iterate through all children and recursively call them
-		for i, cld := range n.Children {
-			value, newnode, didResolve, err = t.tryPrintTrie(cld, key, i)
-		}
 		//value, newnode, didResolve, _, err = t.tryPrintTrie(n.Children[key[pos]], key, pos+1)
 		fmt.Printf("%s\n", value)
 		if err == nil && didResolve {
