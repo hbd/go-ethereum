@@ -197,28 +197,39 @@ func randSeq(n int) string {
 func TestTrieDepth(t *testing.T) {
 	print("Starting TestInsertMany\n\n")
 
-	trie := newEmpty()
 	var numKeys = 1000000
+	var numTests = 2
 	keys := make([]string, numKeys)
 	vals := make([]string, numKeys)
+	var meanDepth, depth = 0.0, 0
 
-	// Generate random k/v pairs of 20 bytes each and insert them into the MPT
-	for i := 0; i < numKeys; i++ {
-		keys[i] = randSeq(20)
-		vals[i] = randSeq(20)
-		updateString(trie, keys[i], vals[i])
-	}
+	// Run tests to calculate the mean depth of tries
+	// Generates a new tree upon each iteration
+	for test := 0; test < numTests; test++ {
+		trie := newEmpty()
+		fmt.Printf("------- Full Test %d -------\n", test + 1)
 
-	// Retrieve some keys
-	for i := 0; i < 5; i++ {
-		fmt.Printf("Key Test %d\n", i + 1)
-		keyIndex := rand.Intn(numKeys)
-		fmt.Printf("\tKey[%d] %x %s, \n\tVal[%d] %x %s\n", keyIndex, keys[keyIndex],
-			keys[keyIndex], i, vals[keyIndex], vals[keyIndex])
-		depth := trie.TrieDFS([]byte(keys[keyIndex]), 0)
-		fmt.Printf("\tDepth: %d", depth)
-		fmt.Print("\n\n")
+		// Generate random k/v pairs of 20 bytes each and insert them into the MPT
+		for i := 0; i < numKeys; i++ {
+			keys[i] = randSeq(20)
+			vals[i] = randSeq(20)
+			updateString(trie, keys[i], vals[i])
+		}
+
+		// Retrieve a random key
+		for i := 0; i < 1; i++ {
+			fmt.Printf("Key Test %d\n", i + 1)
+			keyIndex := rand.Intn(numKeys)
+			fmt.Printf("\tKey[%d] %x %s, \n\tVal[%d] %x %s\n", keyIndex, keys[keyIndex],
+				keys[keyIndex], i, vals[keyIndex], vals[keyIndex])
+			depth = trie.TrieDFS([]byte(keys[keyIndex]), 0)
+			fmt.Printf("\tDepth: %d", depth)
+			fmt.Print("\n\n")
+			meanDepth += float64(depth)
+		}
 	}
+	meanDepth /= float64(numTests)
+	fmt.Printf("Mean depth of trie after %d tests: %.2f\n\n", numTests, meanDepth)
 
 	print("End of TestInsertMany\n\n")
 }
