@@ -179,36 +179,53 @@ func TestInsert(t *testing.T) {
 	}
 }
 
+/*
+==============================================================================
+==============================================================================
+*/
+// Returns a random sequence of 0-9a-f given a length
 func randSeq(n int) string {
-	var letters = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
+	var letters = []byte("0123456789abcdef")
 
-	b := make([]rune, n)
+	b := make([]byte, n)
 	for i:= range b {
 		b[i] = letters[rand.Intn(len(letters))]
 	}
 	return string(b)
 }
 
-func TestInsertMany(t *testing.T) {
-	print("Starting TestInsertMany\n")
-	trie := newEmpty()
-	var keys [1000]string
-	var vals [1000]string
+func TestTrieDepth(t *testing.T) {
+	print("Starting TestInsertMany\n\n")
 
-	for i := 0; i < 1000; i++ {
-		keys[i] = randSeq(10)
-		vals[i] = randSeq(10)
+	trie := newEmpty()
+	var numKeys = 1000000
+	keys := make([]string, numKeys)
+	vals := make([]string, numKeys)
+
+	// Generate random k/v pairs of 20 bytes each and insert them into the MPT
+	for i := 0; i < numKeys; i++ {
+		keys[i] = randSeq(20)
+		vals[i] = randSeq(20)
 		updateString(trie, keys[i], vals[i])
 	}
 
-	trie.PrintTrie([]byte(keys[0]))
-	trie.PrintTrie([]byte(keys[1]))
-	trie.PrintTrie([]byte(keys[99]))
-	trie.PrintTrie([]byte(keys[200]))
-	trie.PrintTrie([]byte(keys[999]))
+	// Retrieve some keys
+	for i := 0; i < 5; i++ {
+		fmt.Printf("Key Test %d\n", i + 1)
+		keyIndex := rand.Intn(numKeys)
+		fmt.Printf("\tKey[%d] %x %s, \n\tVal[%d] %x %s\n", keyIndex, keys[keyIndex],
+			keys[keyIndex], i, vals[keyIndex], vals[keyIndex])
+		depth := trie.TrieDFS([]byte(keys[keyIndex]), 0)
+		fmt.Printf("\tDepth: %d", depth)
+		fmt.Print("\n\n")
+	}
 
-	print("End of TestInsertMany\n")
+	print("End of TestInsertMany\n\n")
 }
+/*
+==============================================================================
+==============================================================================
+ */
 
 func TestGet(t *testing.T) {
 	trie := newEmpty()
