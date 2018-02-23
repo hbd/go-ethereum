@@ -197,7 +197,7 @@ func randSeq(n int) string {
 func TestTrieDepth(t *testing.T) {
 	print("Starting TestInsertMany\n\n")
 
-	var numKeys = 1000000
+	var numKeys = 10000000
 	var numTests = 2
 	keys := make([]string, numKeys)
 	vals := make([]string, numKeys)
@@ -220,8 +220,8 @@ func TestTrieDepth(t *testing.T) {
 		for i := 0; i < 1; i++ {
 			fmt.Printf("Key Test %d\n", i + 1)
 			keyIndex := rand.Intn(numKeys)
-			fmt.Printf("\tKey[%d] %x %s, \n\tVal[%d] %x %s\n", keyIndex, keys[keyIndex],
-				keys[keyIndex], i, vals[keyIndex], vals[keyIndex])
+			fmt.Printf("\tKey[%d] %x, \n\tVal[%d] %x %s\n", keyIndex, keys[keyIndex], keyIndex, vals[keyIndex],
+				keys[keyIndex])
 			depth = trie.TrieDFS([]byte(keys[keyIndex]), 0)
 			fmt.Printf("\tDepth: %d", depth)
 			fmt.Print("\n\n")

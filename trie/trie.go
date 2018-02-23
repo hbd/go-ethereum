@@ -219,6 +219,7 @@ func (t *Trie) tryTrieDFS(origNode node, key []byte, pos int, childDepth int, ma
 	case nil:
 		return Max(childDepth, maxDepth)
 	case valueNode:
+		print()
 		return Max(childDepth + 1, maxDepth)
 	case *shortNode:
 		if len(key)-pos < len(n.Key) || !bytes.Equal(n.Key, key[pos:pos+len(n.Key)]) {
