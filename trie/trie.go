@@ -207,7 +207,7 @@ func (t *Trie) TrieDFS() (int, []int) {
 }
 
 // Given two int's, returns the larger
-func Max(numOne, numTwo int) int {
+func max(numOne, numTwo int) int {
 	if numOne < numTwo {
 		return numTwo
 	}
@@ -219,10 +219,10 @@ func (t *Trie) tryTrieDFS(origNode node, pos, childDepth, maxDepth int, depthLis
 	didResolve bool, err error, depth int, listOfDepths []int) {
 	switch n := (origNode).(type) {
 	case nil: // Do not add depth, this was a nil reference
-		return nil, nil, false, nil, Max(childDepth, maxDepth), depthList
+		return nil, nil, false, nil, max(childDepth, maxDepth), depthList
 	case valueNode: // Add depth, this is the final value node
 		//fmt.Printf("value, childDepth: %d, maxDepth: %d\n", childDepth, maxDepth)
-		return n, n, false, nil, Max(childDepth, maxDepth), append(depthList, childDepth)
+		return n, n, false, nil, max(childDepth, maxDepth), append(depthList, childDepth)
 	case *shortNode:
 		//fmt.Printf("short, %d, %d\n", pos, childDepth)
 		value, newnode, didResolve, err, maxDepth, depthList = t.tryTrieDFS(n.Val, pos+len(n.Key),
@@ -232,22 +232,22 @@ func (t *Trie) tryTrieDFS(origNode node, pos, childDepth, maxDepth int, depthLis
 			n.Val = newnode
 			n.flags.gen = t.cachegen
 		}
-		return value, n, didResolve, err, Max(childDepth + 1, maxDepth), depthList
+		return value, n, didResolve, err, max(childDepth + 1, maxDepth), depthList
 	case *fullNode:
 		//fmt.Printf("full, %d, %d\n", pos, childDepth)
 		for _, child := range n.Children {
 			value, newnode, didResolve, err, maxDepth, depthList = t.tryTrieDFS(child, pos+1, childDepth + 1, maxDepth, depthList)
-			maxDepth = Max(maxDepth, childDepth)
+			maxDepth = max(maxDepth, childDepth)
 		}
-		return value, n, didResolve, err, Max(childDepth + 1, maxDepth), depthList
+		return value, n, didResolve, err, max(childDepth + 1, maxDepth), depthList
 	case hashNode:
 		fmt.Printf("hash, %d, %d\n", pos, childDepth)
 		child, err := t.resolveHash(n, []byte(""))
 		if err != nil {
-			return nil, n, true, err, Max(childDepth + 1, maxDepth), depthList
+			return nil, n, true, err, max(childDepth + 1, maxDepth), depthList
 		}
 		value, newnode, _, err, maxDepth, depthList = t.tryTrieDFS(child, pos, childDepth+1, maxDepth, depthList)
-		return value, newnode, true, err, Max(childDepth + 1, maxDepth), depthList
+		return value, newnode, true, err, max(childDepth + 1, maxDepth), depthList
 	default:
 		panic(fmt.Sprintf("%T: invalid node: %v", origNode, origNode))
 	}
