@@ -198,11 +198,12 @@ func randSeq(n int) string {
 func TestTrieDepth(t *testing.T) {
 	print("Starting TestInsertMany\n\n")
 
-	var numKeys = 1000000
+	var numKeys = 1000
 	var numSubTests = 1
 	keys := make([]string, numKeys)
 	vals := make([]string, numKeys)
 	var meanDepth, depth = 0.0, 0
+	var depthList []int
 
 	fmt.Printf("Number of keys/trie: %d\nNumber of tries each test is run on: %d\n", numKeys, numSubTests)
 
@@ -225,7 +226,8 @@ func TestTrieDepth(t *testing.T) {
 						updateString(trie, keys[i], vals[i])
 					}
 
-					depth = trie.TrieDFS()
+					depth, depthList = trie.TrieDFS()
+					fmt.Printf("leaf node depths: %v\n", depthList)
 					meanDepth += float64(depth)
 				}
 				meanDepth /= float64(numSubTests)
@@ -242,7 +244,8 @@ func TestTrieDepth(t *testing.T) {
 					updateString(trie, keys[i], vals[i])
 				}
 
-				depth = trie.TrieDFS()
+				depth, depthList = trie.TrieDFS()
+				fmt.Printf("leaf node depths: %v\n", depthList)
 				meanDepth += float64(depth)
 			}
 			meanDepth /= float64(numSubTests)
