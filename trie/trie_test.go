@@ -34,6 +34,7 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/ethdb"
 	"github.com/ethereum/go-ethereum/rlp"
+	"math"
 )
 
 func init() {
@@ -198,39 +199,74 @@ func TestTrieDepth(t *testing.T) {
 	print("Starting TestInsertMany\n\n")
 
 	var numKeys = 1000000
-	var numTests = 5
-	var numSubTests = 3
+	var numSubTests = 1
 	keys := make([]string, numKeys)
 	vals := make([]string, numKeys)
 	var meanDepth, depth = 0.0, 0
 
-	// Run tests to calculate the mean depth of tries
-	// Generates a new tree upon each iteration
-	for test := 0; test < numTests; test++ {
-		trie := newEmpty()
-		fmt.Printf("------- Full Test %d | Trie has %d nodes -------\n", test + 1, numKeys)
+	fmt.Printf("Number of keys/trie: %d\nNumber of tries each test is run on: %d\n", numKeys, numSubTests)
 
-		// Generate random k/v pairs of 20 bytes each and insert them into the MPT
-		for i := 0; i < numKeys; i++ {
-			keys[i] = randSeq(20)
-			vals[i] = randSeq(20)
-			updateString(trie, keys[i], vals[i])
+	// Will test for an incremental number of keys
+	for test := 1; test <= numKeys; test++ {
+		meanDepth = 0
+
+		if test > 10 {
+			moduloBy := int(math.Pow10(int(math.Log10(float64(test)))))
+			remainder := test % moduloBy
+			// Creates new trie each time with numKeys number of keys
+			if remainder == 0 {
+				for subTest := 0; subTest < numSubTests; subTest++ {
+					trie := newEmpty()
+
+					// Will insert keys into trie
+					for i := 0; i < test; i++ {
+						keys[i] = randSeq(20)
+						vals[i] = randSeq(20)
+						updateString(trie, keys[i], vals[i])
+					}
+
+					// Will retrieve a random key from trie
+					//keyIndex := rand.Intn(test)
+					//fmt.Printf("\tKey[%d] %x %s\n\tVal[%d] %x %s\n", keyIndex, keys[keyIndex], keys[keyIndex], keyIndex, vals[keyIndex],
+					//	keys[keyIndex])
+					depth = trie.TrieDFS()
+					//fmt.Printf("Depth: %d\n", depth)
+					//fmt.Print("\n")
+					meanDepth += float64(depth)
+				}
+				meanDepth /= float64(numSubTests)
+				//fmt.Printf("Mean depth of trie after %d tests: %.2f\n\n", numSubTests, meanDepth)
+				fmt.Printf("%d, %.2f\n", test, meanDepth)
+			}
+		} else if test <= 10 {
+			for subTest := 0; subTest < numSubTests; subTest++ {
+				trie := newEmpty()
+
+				// Will insert keys into trie
+				for i := 0; i < test; i++ {
+					keys[i] = randSeq(20)
+					vals[i] = randSeq(20)
+					updateString(trie, keys[i], vals[i])
+				}
+
+				// Will retrieve a random key from trie
+				//keyIndex := rand.Intn(test)
+				//print(keyIndex); print("\n")
+				//fmt.Printf("\tKey[%d] %d %x %s\n\tVal[%d] %x %s\n", keyIndex, []byte(keys[keyIndex]), keys[keyIndex], keys[keyIndex], keyIndex, vals[keyIndex],
+				//	keys[keyIndex])
+				depth = trie.TrieDFS()
+				//trie.TryGet([]byte(keys[keyIndex]))
+				//fmt.Printf("Depth: %d\n", depth)
+				//fmt.Print("\n")
+				meanDepth += float64(depth)
+			}
+			meanDepth /= float64(numSubTests)
+			//fmt.Printf("Mean depth of trie after %d tests: %.2f\n\n", numSubTests, meanDepth)
+			fmt.Printf("%d, %.2f\n", test, meanDepth)
 		}
 
-		// Retrieve a random key
-		for i := 0; i < numSubTests; i++ {
-			fmt.Printf("Key Test %d\n", i + 1)
-			keyIndex := rand.Intn(numKeys)
-			fmt.Printf("\tKey[%d] %x %s\n\tVal[%d] %x %s\n", keyIndex, keys[keyIndex], keys[keyIndex], keyIndex, vals[keyIndex],
-				keys[keyIndex])
-			depth = trie.TrieDFS([]byte(keys[keyIndex]), 0)
-			fmt.Printf("\tDepth: %d", depth)
-			fmt.Print("\n\n")
-			meanDepth += float64(depth)
-		}
+		// Will perform numSubTests with given (num of keys == test)
 	}
-	meanDepth /= float64(numTests * numSubTests)
-	fmt.Printf("Mean depth of trie after %d tests: %.2f\n\n", numTests, meanDepth)
 
 	print("End of TestInsertMany\n\n")
 }

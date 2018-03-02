@@ -37,6 +37,7 @@ type (
 	fullNode struct {
 		Children [17]node // Actual trie node data to encode/decode (needs custom encoder)
 		flags    nodeFlag
+		numChildren int
 	}
 	shortNode struct {
 		Key   []byte
