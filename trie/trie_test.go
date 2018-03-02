@@ -195,14 +195,44 @@ func randSeq(n int) string {
 	return string(b)
 }
 
+func sumElements(arr []int) int {
+	var sum int
+	for _, e := range arr {
+		sum += e
+	}
+	return sum
+}
+
+func maxElm(arr []int) int {
+	if len(arr) < 1 {return 0}
+	max := arr[0]
+	for _, e := range arr {
+		if max < e {
+			max = e
+		}
+	}
+	return max
+}
+
+func minElm(arr []int) int {
+	if len(arr) < 1 {return 0}
+	min := arr[0]
+	for _, e := range arr {
+		if e < min {
+			min = e
+		}
+	}
+	return min
+}
+
 func TestTrieDepth(t *testing.T) {
 	print("Starting TestInsertMany\n\n")
 
-	var numKeys = 1000
-	var numSubTests = 1
+	var numKeys = 1000000
+	var numSubTests = 3
 	keys := make([]string, numKeys)
 	vals := make([]string, numKeys)
-	var meanDepth, depth = 0.0, 0
+	var meanDepth, meanMaxDepth, meanMinDepth, maxDepth, minDepth = 0.0, 0.0, 0.0, 0, 0
 	var depthList []int
 
 	fmt.Printf("Number of keys/trie: %d\nNumber of tries each test is run on: %d\n", numKeys, numSubTests)
@@ -210,6 +240,10 @@ func TestTrieDepth(t *testing.T) {
 	// Will test for an incremental number of keys
 	for test := 1; test <= numKeys; test++ {
 		meanDepth = 0
+		maxDepth = 0
+		minDepth = 0
+		meanMaxDepth = 0.0
+		meanMinDepth = 0.0
 
 		if test > 10 {
 			moduloBy := int(math.Pow10(int(math.Log10(float64(test)))))
@@ -226,12 +260,17 @@ func TestTrieDepth(t *testing.T) {
 						updateString(trie, keys[i], vals[i])
 					}
 
-					depth, depthList = trie.TrieDFS()
-					fmt.Printf("leaf node depths: %v\n", depthList)
-					meanDepth += float64(depth)
+					_, depthList = trie.TrieDFS()
+					//fmt.Printf("leaf node depths: %v\n", depthList)
+					meanDepth += float64(sumElements(depthList)) / float64(len(depthList))
+					maxDepth += maxElm(depthList)
+					minDepth += minElm(depthList)
 				}
 				meanDepth /= float64(numSubTests)
-				fmt.Printf("%d, %.2f\n", test, meanDepth)
+				meanMaxDepth = float64(maxDepth) / float64(numSubTests)
+				meanMinDepth = float64(minDepth) / float64(numSubTests)
+				fmt.Printf("%d, %.2f, %.2f, %.2f\n", test, meanDepth, meanMaxDepth,
+					meanMinDepth)
 			}
 		} else if test <= 10 {
 			for subTest := 0; subTest < numSubTests; subTest++ {
@@ -244,12 +283,17 @@ func TestTrieDepth(t *testing.T) {
 					updateString(trie, keys[i], vals[i])
 				}
 
-				depth, depthList = trie.TrieDFS()
-				fmt.Printf("leaf node depths: %v\n", depthList)
-				meanDepth += float64(depth)
+				_, depthList = trie.TrieDFS()
+				//fmt.Printf("leaf node depths: %v\n", depthList)
+				meanDepth += float64(sumElements(depthList)) / float64(len(depthList))
+				maxDepth += maxElm(depthList)
+				minDepth += minElm(depthList)
 			}
 			meanDepth /= float64(numSubTests)
-			fmt.Printf("%d, %.2f\n", test, meanDepth)
+			meanMaxDepth = float64(maxDepth) / float64(numSubTests)
+			meanMinDepth = float64(minDepth) / float64(numSubTests)
+			fmt.Printf("%d, %.2f, %.2f, %.2f\n", test, meanDepth, meanMaxDepth,
+				meanMinDepth)
 		}
 	}
 
