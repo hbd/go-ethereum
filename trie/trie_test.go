@@ -225,17 +225,10 @@ func TestTrieDepth(t *testing.T) {
 						updateString(trie, keys[i], vals[i])
 					}
 
-					// Will retrieve a random key from trie
-					//keyIndex := rand.Intn(test)
-					//fmt.Printf("\tKey[%d] %x %s\n\tVal[%d] %x %s\n", keyIndex, keys[keyIndex], keys[keyIndex], keyIndex, vals[keyIndex],
-					//	keys[keyIndex])
 					depth = trie.TrieDFS()
-					//fmt.Printf("Depth: %d\n", depth)
-					//fmt.Print("\n")
 					meanDepth += float64(depth)
 				}
 				meanDepth /= float64(numSubTests)
-				//fmt.Printf("Mean depth of trie after %d tests: %.2f\n\n", numSubTests, meanDepth)
 				fmt.Printf("%d, %.2f\n", test, meanDepth)
 			}
 		} else if test <= 10 {
@@ -249,23 +242,12 @@ func TestTrieDepth(t *testing.T) {
 					updateString(trie, keys[i], vals[i])
 				}
 
-				// Will retrieve a random key from trie
-				//keyIndex := rand.Intn(test)
-				//print(keyIndex); print("\n")
-				//fmt.Printf("\tKey[%d] %d %x %s\n\tVal[%d] %x %s\n", keyIndex, []byte(keys[keyIndex]), keys[keyIndex], keys[keyIndex], keyIndex, vals[keyIndex],
-				//	keys[keyIndex])
 				depth = trie.TrieDFS()
-				//trie.TryGet([]byte(keys[keyIndex]))
-				//fmt.Printf("Depth: %d\n", depth)
-				//fmt.Print("\n")
 				meanDepth += float64(depth)
 			}
 			meanDepth /= float64(numSubTests)
-			//fmt.Printf("Mean depth of trie after %d tests: %.2f\n\n", numSubTests, meanDepth)
 			fmt.Printf("%d, %.2f\n", test, meanDepth)
 		}
-
-		// Will perform numSubTests with given (num of keys == test)
 	}
 
 	print("End of TestInsertMany\n\n")

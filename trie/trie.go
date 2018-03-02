@@ -218,10 +218,9 @@ func (t *Trie) tryTrieDFS(origNode node, pos, childDepth, maxDepth int) (value [
 	didResolve bool, err error, depth int) {
 	switch n := (origNode).(type) {
 	case nil: // Do not add depth, this was a nil reference
-		//fmt.Printf("nil: Did not find key\n")
 		return nil, nil, false, nil, Max(childDepth, maxDepth)
 	case valueNode: // Add depth, this is the final value node
-		fmt.Printf("value, %d, %d, %x\n", pos, childDepth, n)
+		//fmt.Printf("value, %d, %d, %x\n", pos, childDepth, n)
 		return n, n, false, nil, Max(childDepth + 1, maxDepth)
 	case *shortNode:
 		//fmt.Printf("short, %d, %d\n", pos, childDepth)
@@ -237,12 +236,6 @@ func (t *Trie) tryTrieDFS(origNode node, pos, childDepth, maxDepth int) (value [
 		for _, child := range n.Children {
 			value, newnode, didResolve, err, maxDepth = t.tryTrieDFS(child, pos+1, childDepth + 1, maxDepth)
 			maxDepth = Max(maxDepth, childDepth)
-		}
-		if err == nil && didResolve {
-			fmt.Printf("!!!\t\tError in fullNode\n")
-			//n = n.copy()
-			//n.flags.gen = t.cachegen
-			//n.Children[key[pos]] = newnode
 		}
 		return value, n, didResolve, err, Max(childDepth + 1, maxDepth)
 	case hashNode:
