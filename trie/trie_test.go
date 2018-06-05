@@ -29,12 +29,13 @@ import (
 	"testing"
 	"testing/quick"
 
+	"math"
+
 	"github.com/davecgh/go-spew/spew"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/ethdb"
 	"github.com/ethereum/go-ethereum/rlp"
-	"math"
 )
 
 func init() {
@@ -83,6 +84,7 @@ func TestMissingNodeDisk(t *testing.T)    { testMissingNode(t, false) }
 func TestMissingNodeMemonly(t *testing.T) { testMissingNode(t, true) }
 
 func testMissingNode(t *testing.T, memonly bool) {
+	//if !memonly {println("in testingMissingNode")}
 	diskdb, _ := ethdb.NewMemDatabase()
 	triedb := NewDatabase(diskdb)
 
@@ -189,7 +191,7 @@ func randSeq(n int) string {
 	var letters = []byte("0123456789abcdef")
 
 	b := make([]byte, n)
-	for i:= range b {
+	for i := range b {
 		b[i] = letters[rand.Intn(len(letters))]
 	}
 	return string(b)
@@ -204,7 +206,9 @@ func sumElements(arr []int) int {
 }
 
 func maxElm(arr []int) int {
-	if len(arr) < 1 {return 0}
+	if len(arr) < 1 {
+		return 0
+	}
 	max := arr[0]
 	for _, e := range arr {
 		if max < e {
@@ -215,7 +219,9 @@ func maxElm(arr []int) int {
 }
 
 func minElm(arr []int) int {
-	if len(arr) < 1 {return 0}
+	if len(arr) < 1 {
+		return 0
+	}
 	min := arr[0]
 	for _, e := range arr {
 		if e < min {
@@ -228,17 +234,17 @@ func minElm(arr []int) int {
 func TestTrieDepth(t *testing.T) {
 	print("Starting TestInsertMany\n\n")
 
-	var numKeys = 1000000
-	var numSubTests = 3
+	var numKeys = 1000
+	var numSubTests = 1
 	keys := make([]string, numKeys)
 	vals := make([]string, numKeys)
 	var meanDepth, meanMaxDepth, meanMinDepth, maxDepth, minDepth = 0.0, 0.0, 0.0, 0, 0
 	var depthList []int
 
-	fmt.Printf("Number of keys/trie: %d\nNumber of tries each test is run on: %d\n", numKeys, numSubTests)
+	//fmt.Printf("Number of keys/trie: %d\nNumber of tries each test is run on: %d\n", numKeys, numSubTests)
 
 	// Will test for an incremental number of keys
-	for test := 1; test <= numKeys; test++ {
+	for test := 10000; test <= numKeys; test++ {
 		meanDepth = 0
 		maxDepth = 0
 		minDepth = 0
@@ -251,7 +257,9 @@ func TestTrieDepth(t *testing.T) {
 			// Creates new trie each time with numKeys number of keys
 			if remainder == 0 {
 				for subTest := 0; subTest < numSubTests; subTest++ {
-					trie := newEmpty()
+					diskdb, _ := ethdb.NewMemDatabase()
+					triedb := NewDatabase(diskdb)
+					trie, _ := New(common.Hash{}, triedb)
 
 					// Will insert keys into trie
 					for i := 0; i < test; i++ {
@@ -259,22 +267,27 @@ func TestTrieDepth(t *testing.T) {
 						vals[i] = randSeq(20)
 						updateString(trie, keys[i], vals[i])
 					}
+					root, _ := trie.Commit(nil)
+					trie, _ = New(root, triedb)
 
 					_, depthList = trie.TrieDFS()
 					//fmt.Printf("leaf node depths: %v\n", depthList)
 					meanDepth += float64(sumElements(depthList)) / float64(len(depthList))
 					maxDepth += maxElm(depthList)
 					minDepth += minElm(depthList)
+					delete(triedb.nodes, root)
 				}
 				meanDepth /= float64(numSubTests)
 				meanMaxDepth = float64(maxDepth) / float64(numSubTests)
 				meanMinDepth = float64(minDepth) / float64(numSubTests)
-				fmt.Printf("%d, %.2f, %.2f, %.2f\n", test, meanDepth, meanMaxDepth,
+				fmt.Printf("Test #: %d\nMean Depth:\t\t%.2f\nMean Max Depth:\t\t%.2f\nMean Min Depth:\t\t%.2f\n", test, meanDepth, meanMaxDepth,
 					meanMinDepth)
 			}
 		} else if test <= 10 {
 			for subTest := 0; subTest < numSubTests; subTest++ {
-				trie := newEmpty()
+				diskdb, _ := ethdb.NewMemDatabase()
+				triedb := NewDatabase(diskdb)
+				trie, _ := New(common.Hash{}, triedb)
 
 				// Will insert keys into trie
 				for i := 0; i < test; i++ {
@@ -282,27 +295,99 @@ func TestTrieDepth(t *testing.T) {
 					vals[i] = randSeq(20)
 					updateString(trie, keys[i], vals[i])
 				}
+				root, _ := trie.Commit(nil)
+				trie, _ = New(root, triedb)
 
 				_, depthList = trie.TrieDFS()
 				//fmt.Printf("leaf node depths: %v\n", depthList)
 				meanDepth += float64(sumElements(depthList)) / float64(len(depthList))
 				maxDepth += maxElm(depthList)
 				minDepth += minElm(depthList)
+				delete(triedb.nodes, root)
 			}
 			meanDepth /= float64(numSubTests)
 			meanMaxDepth = float64(maxDepth) / float64(numSubTests)
 			meanMinDepth = float64(minDepth) / float64(numSubTests)
-			fmt.Printf("%d, %.2f, %.2f, %.2f\n", test, meanDepth, meanMaxDepth,
+			fmt.Printf("Test #: %d\nMean Depth:\t\t%.2f\nMean Max Depth:\t\t%.2f\nMean Min Depth:\t\t%.2f\n", test, meanDepth, meanMaxDepth,
 				meanMinDepth)
 		}
 	}
 
 	print("End of TestInsertMany\n\n")
 }
+
+func TestDFSWithKnownKeys(t *testing.T) {
+	trie := newEmpty()
+	updateString(trie, "doe", "reindeer")
+	updateString(trie, "dog", "puppy")
+	updateString(trie, "dogglesworth", "cat")
+
+	_, depthList := trie.TrieDFS()
+	fmt.Printf("%v\n", depthList)
+
+	//for i := 0; i < 2; i++ {
+	//	res := getString(trie, "dog")
+	//	if !bytes.Equal(res, []byte("puppy")) {
+	//		t.Errorf("expected puppy got %x", res)
+	//	}
+	//
+	//	unknown := getString(trie, "unknown")
+	//	if unknown != nil {
+	//		t.Errorf("expected nil got %x", unknown)
+	//	}
+	//
+	//	if i == 1 {
+	//		return
+	//	}
+	//	trie.Commit(nil)
+	//}
+
+}
+
+func TestGetResolve(t *testing.T) {
+	diskdb, _ := ethdb.NewMemDatabase()
+	triedb := NewDatabase(diskdb)
+
+	trie, _ := New(common.Hash{}, triedb)
+	updateString(trie, "120000", "qwerqwerqwerqwerqwerqwerqwerqwer")
+	updateString(trie, "123456", "asdfasdfasdfasdfasdfasdfasdfasdf")
+	root, _ := trie.Commit(nil)
+
+	triedb.Commit(root, true)
+
+	trie, _ = New(root, triedb)
+	_, err := trie.TryGetResolve([]byte("120000"))
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+	trie, _ = New(root, triedb)
+	_, err = trie.TryGetResolve([]byte("120099"))
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+	trie, _ = New(root, triedb)
+	_, err = trie.TryGetResolve([]byte("123456"))
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+	trie, _ = New(root, triedb)
+	err = trie.TryUpdate([]byte("120099"), []byte("zxcvzxcvzxcvzxcvzxcvzxcvzxcvzxcv"))
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+	trie, _ = New(root, triedb)
+	err = trie.TryDelete([]byte("123456"))
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+
+	//println("Leaving TestGetResolve")
+}
+
 /*
 ==============================================================================
 ==============================================================================
- */
+*/
 
 func TestGet(t *testing.T) {
 	trie := newEmpty()

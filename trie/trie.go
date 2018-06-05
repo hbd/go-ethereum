@@ -134,6 +134,7 @@ func (t *Trie) TryGet(key []byte) ([]byte, error) {
 	key = keybytesToHex(key)
 	value, newroot, didResolve, err := t.tryGet(t.root, key, 0)
 	if err == nil && didResolve {
+		//fmt.Printf("didResolve\n")
 		t.root = newroot
 	}
 	return value, err
@@ -166,6 +167,7 @@ func (t *Trie) tryGet(origNode node, key []byte, pos int) (value []byte, newnode
 		}
 		return value, n, didResolve, err
 	case hashNode:
+		//println("hashNode")
 		child, err := t.resolveHash(n, key[:pos])
 		if err != nil {
 			return nil, n, true, err
@@ -182,27 +184,15 @@ func (t *Trie) tryGet(origNode node, key []byte, pos int) (value []byte, newnode
 ==============================================================================
 ==============================================================================
 */
-func (t *Trie) PrintTrie(key []byte) []byte {
-	res, err := t.TryPrintTrie(key)
-	if err != nil {
-		log.Error(fmt.Sprintf("Unhandled trie error: %v", err))
-	}
-	return res
-}
-
-func (t *Trie)TryPrintTrie(key []byte) ([]byte, error) {
-	key = keybytesToHex(key)
-	value, newroot, didResolve, err := t.tryPrintTrie(t.root, key, 0)
-	if err == nil && didResolve {
-		t.root = newroot
-	}
-	return value, err
-}
 
 // Returns an integer representing the depth of the trie
 func (t *Trie) TrieDFS() (int, []int) {
 	var listOfDepths []int
-	_, _, _, _, maxDepth, listOfDepths := t.tryTrieDFS(t.root, 0, 1, 1, listOfDepths)
+	_, newRoot, didResolve, err, maxDepth, listOfDepths := t.tryTrieDFS(t.root, 0, 1, 1, listOfDepths)
+	if err == nil && didResolve {
+		//fmt.Printf("DFS: didResolve\n")
+		t.root = newRoot
+	}
 	return maxDepth, listOfDepths
 }
 
@@ -241,7 +231,7 @@ func (t *Trie) tryTrieDFS(origNode node, pos, childDepth, maxDepth int, depthLis
 		}
 		return value, n, didResolve, err, max(childDepth + 1, maxDepth), depthList
 	case hashNode:
-		fmt.Printf("hash, %d, %d\n", pos, childDepth)
+		//fmt.Printf("hash, %d, %d\n", pos, childDepth)
 		child, err := t.resolveHash(n, []byte(""))
 		if err != nil {
 			return nil, n, true, err, max(childDepth + 1, maxDepth), depthList
@@ -253,30 +243,41 @@ func (t *Trie) tryTrieDFS(origNode node, pos, childDepth, maxDepth int, depthLis
 	}
 }
 
-func (t *Trie) tryPrintTrie(origNode node, key []byte, pos int) (value []byte, newnode node, didResolve bool,
-	err error) {
+// Get returns the value for key stored in the trie.
+// The value bytes must not be modified by the caller.
+func (t *Trie) GetResolve(key []byte) []byte {
+	res, err := t.TryGetResolve(key)
+	if err != nil {
+		log.Error(fmt.Sprintf("Unhandled trie error: %v", err))
+	}
+	return res
+}
+
+// TryGet returns the value for key stored in the trie.
+// The value bytes must not be modified by the caller.
+// If a node was not found in the database, a MissingNodeError is returned.
+func (t *Trie) TryGetResolve(key []byte) ([]byte, error) {
+	key = keybytesToHex(key)
+	value, newroot, didResolve, err := t.tryGetResolve(t.root, key, 0)
+	if err == nil && didResolve {
+		//fmt.Printf("didResolve\n")
+		t.root = newroot
+	}
+	return value, err
+}
+
+func (t *Trie) tryGetResolve(origNode node, key []byte, pos int) (value []byte, newnode node, didResolve bool, err error) {
 	switch n := (origNode).(type) {
 	case nil:
-		print("nil\n")
 		return nil, nil, false, nil
 	case valueNode:
-		print("valueNode: \n")
-		fmt.Printf("%x, %s \n", n, n)
 		return n, n, false, nil
 	case *shortNode:
-		fmt.Printf("shortNode: %s %s\n", key, n.Key)
-		// If the length of this key adjusted for this child is less than the length of the node's key, then it
-		// cannot be in the trie || if the node's key (bytes) is not equal to the key from this position to the length
-		// of the key
-		fmt.Printf("length of this key: %d\nthis key: %s\npos: %d\nlength of n.Key: %d\nn.Key: %s",
-			len(key), key, pos, len(n.Key), n.Key)
 		if len(key)-pos < len(n.Key) || !bytes.Equal(n.Key, key[pos:pos+len(n.Key)]) {
 			// key not found in trie
-			print("Key Not in Trie")
 			return nil, n, false, nil
 		}
-		value, newnode, didResolve, err = t.tryPrintTrie(n.Val, key, pos+len(n.Key))
-		fmt.Printf("%s\n", value)
+		value, newnode, didResolve, err = t.tryGetResolve(n.Val, key, pos+len(n.Key))
 		if err == nil && didResolve {
 			n = n.copy()
 			n.Val = newnode
@@ -284,9 +285,7 @@ func (t *Trie) tryPrintTrie(origNode node, key []byte, pos int) (value []byte, n
 		}
 		return value, n, didResolve, err
 	case *fullNode:
-		fmt.Printf("fullNode: %s\n", key)
-		//value, newnode, didResolve, _, err = t.tryPrintTrie(n.Children[key[pos]], key, pos+1)
-		fmt.Printf("%s\n", value)
+		value, newnode, didResolve, err = t.tryGetResolve(n.Children[key[pos]], key, pos+1)
 		if err == nil && didResolve {
 			n = n.copy()
 			n.flags.gen = t.cachegen
@@ -294,18 +293,17 @@ func (t *Trie) tryPrintTrie(origNode node, key []byte, pos int) (value []byte, n
 		}
 		return value, n, didResolve, err
 	case hashNode:
-		print("hashNode\n")
 		child, err := t.resolveHash(n, key[:pos])
 		if err != nil {
 			return nil, n, true, err
 		}
-		value, newnode, _, err := t.tryPrintTrie(child, key, pos)
-		//fmt.Printf("%s\n", value)
+		value, newnode, _, err := t.tryGetResolve(child, key, pos)
 		return value, newnode, true, err
 	default:
 		panic(fmt.Sprintf("%T: invalid node: %v", origNode, origNode))
 	}
 }
+
 /*
 ==============================================================================
 ==============================================================================
